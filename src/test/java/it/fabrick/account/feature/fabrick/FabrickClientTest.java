@@ -6,6 +6,7 @@ import it.fabrick.account.client.RestClientService;
 import it.fabrick.account.exception.ThirdPartyException;
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickGetBalanceResponse;
+import it.fabrick.account.feature.fabrick.contract.FabrickTransferResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 
 import static it.fabrick.account.fixture.FabrickFixtures.getBaseErrorResponse;
 import static it.fabrick.account.fixture.FabrickFixtures.getValidBalanceResponse;
+import static it.fabrick.account.fixture.FabrickFixtures.getValidFabrickTransferRequest;
+import static it.fabrick.account.fixture.FabrickFixtures.getValidFabrickTransferResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -85,5 +88,34 @@ class FabrickClientTest {
         )).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
 
         assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountBalance(333L));
+    }
+
+    @Test
+    void createTransfer_shouldWork() {
+        var expectedResponse = getValidFabrickTransferResponse();
+        when(restClientService.executeRequestWithRetry(
+                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/123/payments/money-transfers"),
+                eq(HttpMethod.POST),
+                any(),
+                eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickTransferResponse>>() {
+                })
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        var actualResponse = fabrickClient.createTransfer(123L, getValidFabrickTransferRequest());
+        assertEquals(actualResponse.getStatus(), expectedResponse.getPayload().getStatus());
+    }
+
+    @Test
+    void createTransfer_shouldThrowThirdPartyException_whenStatusCodeNotOk() throws JsonProcessingException {
+        var request = getValidFabrickTransferRequest();
+        when(restClientService.executeRequestWithRetry(
+                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/123/payments/money-transfers"),
+                eq(HttpMethod.POST),
+                any(),
+                eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickTransferResponse>>() {
+                })
+        )).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "", objectMapper.writeValueAsBytes(getBaseErrorResponse()), StandardCharsets.UTF_8));
+
+        assertThrows(ThirdPartyException.class, () -> fabrickClient.createTransfer(123L, request));
     }
 }

@@ -1,8 +1,11 @@
 package it.fabrick.account.fixture;
 
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
+import it.fabrick.account.feature.fabrick.contract.FabrickCreditor;
 import it.fabrick.account.feature.fabrick.contract.FabrickErrorResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickGetBalanceResponse;
+import it.fabrick.account.feature.fabrick.contract.FabrickTransferRequest;
+import it.fabrick.account.feature.fabrick.contract.FabrickTransferResponse;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -29,6 +32,32 @@ public abstract class FabrickFixtures {
                         .description("error description")
                         .code("ISC1")
                         .build()))
+                .build();
+    }
+
+
+    public static FabrickTransferRequest getValidFabrickTransferRequest() {
+        return FabrickTransferRequest.builder()
+                .creditor(FabrickCreditor.builder()
+                        .name("John")
+                        .account(FabrickCreditor.Account.builder()
+                                .accountCode("IT23A0336844430152923804660")
+                                .build())
+                        .build())
+                .executionDate(LocalDate.of(2023, 3, 19))
+                .description("description")
+                .amount(444D)
+                .currency("EUR")
+                .build();
+    }
+
+    public static FabrickBaseResponse<FabrickTransferResponse> getValidFabrickTransferResponse() {
+        return FabrickBaseResponse.<FabrickTransferResponse>builder()
+                .status(FabrickBaseResponse.ResponseStatus.OK)
+                .error(Collections.emptyList())
+                .payload(FabrickTransferResponse.builder()
+                        .status(FabrickTransferResponse.TransferStatus.BOOKED)
+                        .build())
                 .build();
     }
 }

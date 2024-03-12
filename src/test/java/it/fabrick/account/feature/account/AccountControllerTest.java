@@ -52,4 +52,31 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.exceptionCode").value("code"));
     }
+
+    @Test
+    void createTransfer_shouldWork() throws Exception {
+        var expected = AccountFixtures.getValidCreateTransferResponse();
+        var request = AccountFixtures.getValidCreateTransferRequest();
+        when(accountService.createTransfer(12L, request)).thenReturn(expected);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/account/12/money-transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(expected)));
+    }
+
+    @Test
+    void createTransfer_shouldReturnError_whenClientCallFails() throws Exception {
+        var request = AccountFixtures.getValidCreateTransferRequest();
+        when(accountService.createTransfer(12L, request)).thenThrow(new ThirdPartyException("message", FABRICK, "code", HttpStatusCode.valueOf(400)));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/account/12/money-transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.exceptionCode").value("code"));
+    }
 }

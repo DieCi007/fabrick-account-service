@@ -1,9 +1,7 @@
 package it.fabrick.account.feature.fabrick;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import it.fabrick.account.client.RestClientService;
 import it.fabrick.account.exception.ThirdPartyException;
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
@@ -35,32 +33,26 @@ class FabrickClientTest {
     @Mock
     private RestClientService restClientService;
     private final String fabrickServerBaseUrl = "url";
-    private final String fabrickServerApiKey = "key";
-    private final String fabrickServerAuthSchema = "schema";
-    private final String fabrickAccountId = "123";
     private FabrickClient fabrickClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     public void init() {
-        this.fabrickClient = new FabrickClient(restClientService, fabrickServerBaseUrl, fabrickServerApiKey,
-                fabrickServerAuthSchema, fabrickAccountId);
-        objectMapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
-        objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        this.fabrickClient = new FabrickClient(restClientService, fabrickServerBaseUrl, "key", "schema");
     }
 
     @Test
     void getAccountBalance_shouldWork() {
         var expectedResponse = getValidBalanceResponse();
         when(restClientService.executeRequestWithRetry(
-                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/" + fabrickAccountId + "/balance"),
+                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/123/balance"),
                 eq(HttpMethod.GET),
                 any(),
                 eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickGetBalanceResponse>>() {
                 })
         )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
 
-        var actualResponse = fabrickClient.getAccountBalance();
+        var actualResponse = fabrickClient.getAccountBalance(123L);
         assertEquals(actualResponse.getBalance(), expectedResponse.getPayload().getBalance());
         assertEquals(actualResponse.getAvailableBalance(), expectedResponse.getPayload().getAvailableBalance());
         assertEquals(actualResponse.getCurrency(), expectedResponse.getPayload().getCurrency());
@@ -69,14 +61,14 @@ class FabrickClientTest {
     @Test
     void getAccountBalance_shouldThrowThirdPartyException_whenStatusCodeNotOk() throws JsonProcessingException {
         when(restClientService.executeRequestWithRetry(
-                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/" + fabrickAccountId + "/balance"),
+                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/111/balance"),
                 eq(HttpMethod.GET),
                 any(),
                 eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickGetBalanceResponse>>() {
                 })
         )).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "", objectMapper.writeValueAsBytes(getBaseErrorResponse()), StandardCharsets.UTF_8));
 
-        assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountBalance());
+        assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountBalance(111L));
     }
 
     @Test
@@ -85,13 +77,13 @@ class FabrickClientTest {
                 .status(FabrickBaseResponse.ResponseStatus.KO)
                 .build();
         when(restClientService.executeRequestWithRetry(
-                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/" + fabrickAccountId + "/balance"),
+                eq(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/333/balance"),
                 eq(HttpMethod.GET),
                 any(),
                 eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickGetBalanceResponse>>() {
                 })
         )).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
 
-        assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountBalance());
+        assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountBalance(333L));
     }
 }

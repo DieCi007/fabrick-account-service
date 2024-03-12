@@ -23,9 +23,9 @@ class AccountServiceTest {
     @Test
     void getAccountBalance_shouldWork() {
         var fabrickResponse = FabrickFixtures.getValidBalanceResponse().getPayload();
-        when(fabrickClient.getAccountBalance()).thenReturn(fabrickResponse);
+        when(fabrickClient.getAccountBalance(12L)).thenReturn(fabrickResponse);
 
-        var actualResponse = accountService.getAccountBalance();
+        var actualResponse = accountService.getAccountBalance(12L);
         assertEquals(actualResponse.getBalance(), fabrickResponse.getBalance());
         assertEquals(actualResponse.getAvailableBalance(), fabrickResponse.getAvailableBalance());
         assertEquals(actualResponse.getDate(), fabrickResponse.getDate());

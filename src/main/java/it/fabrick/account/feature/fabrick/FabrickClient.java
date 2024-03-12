@@ -27,7 +27,6 @@ public class FabrickClient {
     private final String fabrickServerBaseUrl;
     private final String fabrickServerApiKey;
     private final String fabrickServerAuthSchema;
-    private final String fabrickAccountId;
     private final FabrickErrorResponse defaultErrorResponse = FabrickErrorResponse.builder()
             .code(UNKNOWN_ERROR)
             .description(UNKNOWN_ERROR).build();
@@ -36,17 +35,15 @@ public class FabrickClient {
     public FabrickClient(RestClientService restClient,
                          @Value("${it.fabrick.server.baseUrl}") String fabrickServerBaseUrl,
                          @Value("${it.fabrick.server.apiKey}") String fabrickServerApiKey,
-                         @Value("${it.fabrick.server.authSchema}") String fabrickServerAuthSchema,
-                         @Value("${it.fabrick.account.id}") String fabrickAccountId) {
+                         @Value("${it.fabrick.server.authSchema}") String fabrickServerAuthSchema) {
         this.restClient = restClient;
         this.fabrickServerBaseUrl = fabrickServerBaseUrl;
         this.fabrickServerApiKey = fabrickServerApiKey;
         this.fabrickServerAuthSchema = fabrickServerAuthSchema;
-        this.fabrickAccountId = fabrickAccountId;
     }
 
-    public FabrickGetBalanceResponse getAccountBalance() {
-        var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", fabrickAccountId, "/balance");
+    public FabrickGetBalanceResponse getAccountBalance(Long accountId) {
+        var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", accountId, "/balance");
         return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(
                 url,
                 HttpMethod.GET,

@@ -14,8 +14,8 @@ public class AccountService {
         this.fabrickClient = fabrickClient;
     }
 
-    public GetBalanceResponse getAccountBalance() {
-        var fabrickBalance = fabrickClient.getAccountBalance();
+    public GetBalanceResponse getAccountBalance(Long accountId) {
+        var fabrickBalance = fabrickClient.getAccountBalance(accountId);
         return GetBalanceResponse.from(fabrickBalance);
     }
 }

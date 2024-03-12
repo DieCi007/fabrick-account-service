@@ -4,6 +4,7 @@ import it.fabrick.account.feature.account.contract.GetBalanceResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,9 +19,9 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @GetMapping("v1/account/balance")
+    @GetMapping("v1/account/{accountId}/balance")
     @ResponseStatus(HttpStatus.OK)
-    public GetBalanceResponse getAccountBalance() {
-        return accountService.getAccountBalance();
+    public GetBalanceResponse getAccountBalance(@PathVariable Long accountId) {
+        return accountService.getAccountBalance(accountId);
     }
 }

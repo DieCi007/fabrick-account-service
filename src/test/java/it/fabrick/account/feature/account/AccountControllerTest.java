@@ -33,9 +33,9 @@ class AccountControllerTest {
     @Test
     void getAccountBalance_shouldWork() throws Exception {
         var expected = AccountFixtures.getValidGetBalanceResponse();
-        when(accountService.getAccountBalance()).thenReturn(expected);
+        when(accountService.getAccountBalance(12L)).thenReturn(expected);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/balance")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/12/balance")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(objectMapper.writeValueAsString(expected)));
@@ -43,9 +43,9 @@ class AccountControllerTest {
 
     @Test
     void getAccountBalance_shouldReturnError_whenClientCallFails() throws Exception {
-        when(accountService.getAccountBalance()).thenThrow(new ThirdPartyException("message", FABRICK, "code", HttpStatusCode.valueOf(400)));
+        when(accountService.getAccountBalance(12L)).thenThrow(new ThirdPartyException("message", FABRICK, "code", HttpStatusCode.valueOf(400)));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/balance")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/12/balance")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().is4xxClientError())
                 .andExpect(jsonPath("$.status").value(400))

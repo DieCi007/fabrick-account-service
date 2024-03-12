@@ -1,5 +1,6 @@
 package it.fabrick.account.feature.fabrick;
 
+import it.fabrick.account.annotation.LogChain;
 import it.fabrick.account.client.RestClientService;
 import it.fabrick.account.exception.ThirdPartyException;
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
@@ -45,6 +46,7 @@ public class FabrickClient {
         this.fabrickServerAuthSchema = fabrickServerAuthSchema;
     }
 
+    @LogChain
     public FabrickGetBalanceResponse getAccountBalance(Long accountId) {
         var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", accountId, "/balance");
         return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(
@@ -56,6 +58,7 @@ public class FabrickClient {
         ).getBody());
     }
 
+    @LogChain
     public FabrickTransferResponse createTransfer(Long accountId, FabrickTransferRequest request) {
         var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", accountId, "/payments/money-transfers");
         return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(

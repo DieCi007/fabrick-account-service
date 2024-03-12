@@ -29,3 +29,12 @@
 "amount": 800,
 "currency": "EUR"
 }'``
+
+
+# In Memory DB
+## See transaction requests
+1. #### Navigate to http://localhost:8080/h2-console
+2. #### Access using credentials:
+   1. JDBC URL - jdbc:h2:mem:account
+   2. User name - user
+   3. Password - password

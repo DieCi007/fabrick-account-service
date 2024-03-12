@@ -26,6 +26,7 @@ public class CreateTransferRequest {
     private String currency;
     @NotNull
     private Double amount;
+    @NotNull
     private LocalDate executionDate;
 
     @AllArgsConstructor

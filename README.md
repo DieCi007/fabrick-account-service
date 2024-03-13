@@ -11,6 +11,12 @@
 --header 'api-key: FXOVVXXHVCPVPBZXIJOBGUGSKHDNFRRQJP' \
 --header 'Auth-Schema: S2S'``
 
+### Account transfers
+
+``curl --location --request GET 'http://localhost:8080/api/v1/account/14537780/transactions?from=2024-03-09&to=2024-03-13' \
+--header 'api-key: FXOVVXXHVCPVPBZXIJOBGUGSKHDNFRRQJP' \
+--header 'Auth-Schema: S2S'``
+
 ### Money Transfer
 
 ``curl --location --request POST 'http://localhost:8080/api/v1/account/14537780/money-transfer' \

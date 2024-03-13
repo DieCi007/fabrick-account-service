@@ -12,6 +12,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.LocalDate;
+
 import static it.fabrick.account.exception.ThirdPartyException.ExceptionSource.FABRICK;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -51,6 +53,34 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.exceptionCode").value("code"));
+    }
+
+    @Test
+    void getAccountTransactions_shouldWork() throws Exception {
+        var from = LocalDate.now().minusDays(1);
+        var to = from.plusDays(1);
+        var expected = AccountFixtures.getValidGetTransactionsResponse();
+        when(accountService.getAccountTransactions(12L, from, to)).thenReturn(expected);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/12/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .param("from", from.toString())
+                        .param("to", to.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(expected)));
+    }
+
+    @Test
+    void getAccountTransactions_shouldReturnError_whenDateRangeInvalid() throws Exception {
+        var from = LocalDate.now();
+        var to = from.minusDays(1);
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/account/12/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .param("from", from.toString())
+                        .param("to", to.toString()))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"));
     }
 
     @Test

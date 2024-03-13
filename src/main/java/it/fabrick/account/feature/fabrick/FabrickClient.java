@@ -3,9 +3,11 @@ package it.fabrick.account.feature.fabrick;
 import it.fabrick.account.annotation.LogChain;
 import it.fabrick.account.client.RestClientService;
 import it.fabrick.account.exception.ThirdPartyException;
+import it.fabrick.account.feature.fabrick.contract.FabrickBaseListResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickErrorResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickGetBalanceResponse;
+import it.fabrick.account.feature.fabrick.contract.FabrickTransactionResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickTransferRequest;
 import it.fabrick.account.feature.fabrick.contract.FabrickTransferResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +20,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static it.fabrick.account.exception.GlobalErrorHandler.UNKNOWN_ERROR;
@@ -28,12 +33,12 @@ import static it.fabrick.account.exception.ThirdPartyException.ExceptionSource.F
 @Component
 public class FabrickClient {
     private final RestClientService restClient;
-    private final String fabrickServerBaseUrl;
     private final String fabrickServerApiKey;
     private final String fabrickServerAuthSchema;
     private final FabrickErrorResponse defaultErrorResponse = FabrickErrorResponse.builder()
             .code(UNKNOWN_ERROR)
             .description(UNKNOWN_ERROR).build();
+    private final String fabrickBaseAccountUrl;
 
     @Autowired
     public FabrickClient(RestClientService restClient,
@@ -41,14 +46,14 @@ public class FabrickClient {
                          @Value("${it.fabrick.server.apiKey}") String fabrickServerApiKey,
                          @Value("${it.fabrick.server.authSchema}") String fabrickServerAuthSchema) {
         this.restClient = restClient;
-        this.fabrickServerBaseUrl = fabrickServerBaseUrl;
         this.fabrickServerApiKey = fabrickServerApiKey;
         this.fabrickServerAuthSchema = fabrickServerAuthSchema;
+        this.fabrickBaseAccountUrl = fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/";
     }
 
     @LogChain
     public FabrickGetBalanceResponse getAccountBalance(Long accountId) {
-        var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", accountId, "/balance");
+        var url = fabrickBaseAccountUrl + accountId + "/balance";
         return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(
                 url,
                 HttpMethod.GET,
@@ -60,7 +65,7 @@ public class FabrickClient {
 
     @LogChain
     public FabrickTransferResponse createTransfer(Long accountId, FabrickTransferRequest request) {
-        var url = String.format("%s%s%s%s", fabrickServerBaseUrl, "/api/gbs/banking/v4.0/accounts/", accountId, "/payments/money-transfers");
+        var url = fabrickBaseAccountUrl + accountId + "/payments/money-transfers";
         return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(
                 url,
                 HttpMethod.POST,
@@ -68,6 +73,21 @@ public class FabrickClient {
                 new ParameterizedTypeReference<FabrickBaseResponse<FabrickTransferResponse>>() {
                 }
         ).getBody());
+    }
+
+    @LogChain
+    public List<FabrickTransactionResponse> getAccountTransactions(Long accountId, LocalDate from, LocalDate to) {
+        var url = fabrickBaseAccountUrl + accountId + "/transactions";
+        return doExceptionAwareCall(() -> restClient.executeRequestWithRetry(
+                UriComponentsBuilder.fromUriString(url)
+                        .queryParam("fromAccountingDate", from)
+                        .queryParam("toAccountingDate", to)
+                        .build().toString(),
+                HttpMethod.GET,
+                new HttpEntity<>(getHeaders()),
+                new ParameterizedTypeReference<FabrickBaseResponse<FabrickBaseListResponse<FabrickTransactionResponse>>>() {
+                }
+        ).getBody()).getList();
     }
 
     private <T> T doExceptionAwareCall(Supplier<FabrickBaseResponse<T>> call) throws ThirdPartyException {

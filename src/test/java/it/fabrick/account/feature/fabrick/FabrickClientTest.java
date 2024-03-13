@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.fabrick.account.client.RestClientService;
 import it.fabrick.account.exception.ThirdPartyException;
+import it.fabrick.account.feature.fabrick.contract.FabrickBaseListResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickBaseResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickGetBalanceResponse;
+import it.fabrick.account.feature.fabrick.contract.FabrickTransactionResponse;
 import it.fabrick.account.feature.fabrick.contract.FabrickTransferResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,11 +19,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 
 import static it.fabrick.account.fixture.FabrickFixtures.getBaseErrorResponse;
 import static it.fabrick.account.fixture.FabrickFixtures.getValidBalanceResponse;
+import static it.fabrick.account.fixture.FabrickFixtures.getValidFabrickTransactionResponse;
 import static it.fabrick.account.fixture.FabrickFixtures.getValidFabrickTransferRequest;
 import static it.fabrick.account.fixture.FabrickFixtures.getValidFabrickTransferResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -117,5 +122,47 @@ class FabrickClientTest {
         )).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "", objectMapper.writeValueAsBytes(getBaseErrorResponse()), StandardCharsets.UTF_8));
 
         assertThrows(ThirdPartyException.class, () -> fabrickClient.createTransfer(123L, request));
+    }
+
+    @Test
+    void getAccountTransactions_shouldWork() {
+        var response = getValidFabrickTransactionResponse();
+        var fromDate = LocalDate.of(2023, 3, 1);
+        var toDate = LocalDate.of(2023, 3, 11);
+        var url = UriComponentsBuilder.fromUriString(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/123/transactions")
+                .queryParam("fromAccountingDate", fromDate)
+                .queryParam("toAccountingDate", toDate)
+                .build().toString();
+        when(restClientService.executeRequestWithRetry(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(),
+                eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickBaseListResponse<FabrickTransactionResponse>>>() {
+                })
+        )).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
+        var expectedResult = response.getPayload().getList();
+        var result = fabrickClient.getAccountTransactions(123L, fromDate, toDate);
+        assertEquals(expectedResult.size(), result.size());
+        assertEquals(expectedResult.get(0).getTransactionId(), result.get(0).getTransactionId());
+        assertEquals(expectedResult.get(0).getOperationId(), result.get(0).getOperationId());
+        assertEquals(expectedResult.get(0).getDescription(), result.get(0).getDescription());
+    }
+
+    @Test
+    void getAccountTransactions_shouldThrowThirdPartyException_whenStatusCodeNotOk() throws JsonProcessingException {
+        var fromDate = LocalDate.of(2023, 3, 1);
+        var toDate = LocalDate.of(2023, 3, 11);
+        when(restClientService.executeRequestWithRetry(
+                eq(UriComponentsBuilder.fromUriString(fabrickServerBaseUrl + "/api/gbs/banking/v4.0/accounts/123/transactions")
+                        .queryParam("fromAccountingDate", fromDate)
+                        .queryParam("toAccountingDate", toDate)
+                        .build().toString()),
+                eq(HttpMethod.GET),
+                any(),
+                eq(new ParameterizedTypeReference<FabrickBaseResponse<FabrickBaseListResponse<FabrickTransactionResponse>>>() {
+                })
+        )).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "", objectMapper.writeValueAsBytes(getBaseErrorResponse()), StandardCharsets.UTF_8));
+
+        assertThrows(ThirdPartyException.class, () -> fabrickClient.getAccountTransactions(123L, fromDate, toDate));
     }
 }

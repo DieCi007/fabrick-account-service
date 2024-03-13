@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
-
     @Mock
     private FabrickClient fabrickClient;
 
@@ -41,6 +42,20 @@ class AccountServiceTest {
         var actualResponse = accountService.getAccountBalance(12L);
         assertEquals(actualResponse.getAvailableBalance(), fabrickResponse.getAvailableBalance());
         assertEquals(actualResponse.getCurrency(), fabrickResponse.getCurrency());
+    }
+
+    @Test
+    void getAccountTransactions_shouldWork() {
+        var from = LocalDate.now();
+        var to = from.plusDays(1);
+        var fabrickResponse = FabrickFixtures.getValidFabrickTransactionResponse().getPayload();
+        when(fabrickClient.getAccountTransactions(133L, from, to)).thenReturn(fabrickResponse.getList());
+
+        var actualResponse = accountService.getAccountTransactions(133L, from, to);
+        assertEquals(actualResponse.getTransactions().size(), fabrickResponse.getList().size());
+        assertEquals(actualResponse.getTransactions().get(0).getTransactionId(), fabrickResponse.getList().get(0).getTransactionId());
+        assertEquals(actualResponse.getTransactions().get(0).getAmount(), fabrickResponse.getList().get(0).getAmount());
+        assertEquals(actualResponse.getTransactions().get(0).getDescription(), fabrickResponse.getList().get(0).getDescription());
     }
 
     @Test

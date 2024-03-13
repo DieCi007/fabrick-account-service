@@ -3,12 +3,15 @@ package it.fabrick.account.feature.account;
 import it.fabrick.account.feature.account.contract.CreateTransferRequest;
 import it.fabrick.account.feature.account.contract.CreateTransferResponse;
 import it.fabrick.account.feature.account.contract.GetBalanceResponse;
+import it.fabrick.account.feature.account.contract.GetTransactionsResponse;
 import it.fabrick.account.feature.account.entity.TransferRequest;
 import it.fabrick.account.feature.account.repository.TransferRequestRepository;
 import it.fabrick.account.feature.fabrick.FabrickClient;
 import it.fabrick.account.feature.fabrick.contract.FabrickTransferRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 
 @Service
 public class AccountService {
@@ -25,6 +28,11 @@ public class AccountService {
     public GetBalanceResponse getAccountBalance(Long accountId) {
         var fabrickBalance = fabrickClient.getAccountBalance(accountId);
         return GetBalanceResponse.from(fabrickBalance);
+    }
+
+    public GetTransactionsResponse getAccountTransactions(Long accountId, LocalDate from, LocalDate to) {
+        var fabrickTransactions = fabrickClient.getAccountTransactions(accountId, from, to);
+        return GetTransactionsResponse.from(fabrickTransactions);
     }
 
     public CreateTransferResponse createTransfer(Long accountId, CreateTransferRequest request) {

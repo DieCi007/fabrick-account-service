@@ -1,7 +1,7 @@
 # Run with docker
-
-1. #### cd into project root
-2. #### Run ./run-with-docker.sh
+1. #### Update application.properties - insert correct api-key under `it.fabrick.server.apiKey`
+2. #### cd into project root
+3. #### Run ./run-with-docker.sh
 
 # Example API call
 
